@@ -1,4 +1,4 @@
-// ===== AUTH =====
+// ===== js/auth.js =====
 
 async function login() {
   const email = document.getElementById('loginEmail').value.trim();
@@ -7,7 +7,12 @@ async function login() {
 
   showAuthMsg('Входим...');
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-  if (error) return showAuthMsg(error.message);
+  
+  if (error) {
+    if (error.message.includes('Invalid login')) return showAuthMsg('Неверный email или пароль');
+    if (error.message.includes('Email not confirmed')) return showAuthMsg('Отключите "Confirm email" в настройках Supabase');
+    return showAuthMsg(error.message);
+  }
 
   State.currentUser = data.user;
   await loadUserProfile();
@@ -27,16 +32,14 @@ async function register() {
     email, password: pass,
     options: { data: { username: name } }
   });
+  
   if (error) return showAuthMsg(error.message);
 
+  // Мы убрали ручное создание профиля (sb.from('profiles').upsert...), 
+  // потому что теперь SQL-триггер делает это автоматически на сервере!
+
   State.currentUser = data.user;
-  if (State.currentUser) {
-    await sb.from('profiles').upsert({
-      id: State.currentUser.id,
-      username: name,
-    });
-  }
-  showAuthMsg('✅ Готово! Теперь войдите в аккаунт.');
+  showAuthMsg('✅ Успешно! Теперь войдите в аккаунт.');
   switchTab('login');
 }
 
