@@ -1,0 +1,2517 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Звёздная Битва</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1a2e;
+  color: #fff;
+  font-family: 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== AUTH ===== */
+#authScreen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+}
+.auth-box {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 40px;
+  width: 360px;
+  backdrop-filter: blur(10px);
+}
+.auth-box h1 {
+  text-align: center;
+  font-size: 28px;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, #ff6b35, #f7c59f);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.auth-box p { text-align: center; color: #aaa; margin-bottom: 24px; font-size: 14px; }
+.auth-tabs { display: flex; margin-bottom: 24px; border-radius: 10px; overflow: hidden; }
+.auth-tab {
+  flex: 1; padding: 10px; text-align: center; cursor: pointer;
+  background: rgba(255,255,255,0.05); border: none; color: #aaa; font-size: 14px;
+  transition: all 0.3s;
+}
+.auth-tab.active { background: #ff6b35; color: #fff; }
+input {
+  width: 100%; padding: 12px 16px; margin-bottom: 12px;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; color: #fff; font-size: 14px; outline: none;
+  transition: border 0.3s;
+}
+input:focus { border-color: #ff6b35; }
+.btn {
+  width: 100%; padding: 12px; border: none; border-radius: 10px;
+  background: linear-gradient(135deg, #ff6b35, #f7c59f);
+  color: #1a1a2e; font-size: 16px; font-weight: bold; cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.btn:hover { transform: translateY(-2px); opacity: 0.9; }
+.btn:active { transform: translateY(0); }
+.btn-secondary {
+  background: rgba(255,255,255,0.1); color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+#authMsg { text-align: center; margin-top: 12px; font-size: 13px; min-height: 20px; color: #ff6b35; }
+
+/* ===== LOBBY ===== */
+#lobbyScreen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  padding: 20px;
+}
+.lobby-box {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 40px;
+  width: 500px;
+  max-width: 100%;
+}
+.lobby-box h2 { text-align: center; margin-bottom: 24px; font-size: 24px; }
+.player-count { display: flex; gap: 12px; margin-bottom: 20px; justify-content: center; }
+.count-btn {
+  padding: 10px 20px; border: 2px solid rgba(255,255,255,0.2); border-radius: 10px;
+  background: transparent; color: #fff; cursor: pointer; font-size: 16px; transition: all 0.3s;
+}
+.count-btn.active { border-color: #ff6b35; background: rgba(255,107,53,0.2); color: #ff6b35; }
+.room-actions { display: flex; gap: 12px; }
+.room-actions .btn { margin-bottom: 0; }
+.rooms-list { margin-top: 20px; }
+.room-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: rgba(255,255,255,0.05);
+  border-radius: 10px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.1);
+}
+.room-item .join-btn {
+  width: auto; padding: 8px 16px; font-size: 13px;
+}
+.user-info {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px; padding: 12px 16px;
+  background: rgba(255,107,53,0.1); border-radius: 10px;
+}
+
+/* ===== GAME ===== */
+#gameScreen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 10px;
+  background: #0d0d1a;
+}
+
+.game-header {
+  width: 100%; max-width: 1200px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 20px; background: rgba(255,255,255,0.05);
+  border-radius: 15px; margin-bottom: 10px;
+}
+
+.game-main {
+  display: flex; gap: 15px; width: 100%; max-width: 1200px;
+  flex-wrap: wrap; justify-content: center;
+}
+
+/* ===== BOARD ===== */
+#boardContainer {
+  position: relative;
+  flex-shrink: 0;
+}
+
+#gameCanvas {
+  border-radius: 15px;
+  background: #1a1a3e;
+  cursor: pointer;
+}
+
+/* ===== SIDE PANEL ===== */
+.side-panel {
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel-box {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 15px;
+  padding: 15px;
+}
+.panel-box h3 {
+  font-size: 14px; color: #aaa; margin-bottom: 10px;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+
+/* Players */
+.player-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 10px; margin-bottom: 6px;
+  border: 1px solid transparent; transition: all 0.3s;
+}
+.player-card.active { border-color: #ff6b35; background: rgba(255,107,53,0.1); }
+.player-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+.player-name { flex: 1; font-size: 13px; }
+.player-juice { font-size: 13px; color: #f7c59f; }
+
+/* Roulette */
+.roulette-area { text-align: center; }
+.roulette-wheel {
+  width: 100px; height: 100px; border-radius: 50%;
+  background: conic-gradient(#ff6b35 0deg 60deg, #f7c59f 60deg 120deg, #4ecdc4 120deg 180deg,
+    #45b7d1 180deg 240deg, #96e6a1 240deg 300deg, #dda0dd 300deg 360deg);
+  margin: 0 auto 10px; position: relative;
+  transition: transform 2s cubic-bezier(0.17,0.67,0.12,0.99);
+  border: 3px solid rgba(255,255,255,0.2);
+}
+.roulette-center {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  background: #1a1a2e; width: 40px; height: 40px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: bold;
+}
+.roulette-result {
+  font-size: 24px; font-weight: bold; color: #ff6b35;
+  min-height: 36px;
+}
+.spin-btn {
+  width: 100%; padding: 10px; border: none; border-radius: 10px;
+  background: linear-gradient(135deg, #ff6b35, #f7c59f);
+  color: #1a1a2e; font-weight: bold; cursor: pointer; font-size: 14px;
+  margin-top: 8px; transition: all 0.3s;
+}
+.spin-btn:hover { opacity: 0.85; }
+.spin-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Shop */
+.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.card-item {
+  padding: 8px; border-radius: 8px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.03); transition: all 0.2s;
+  text-align: center; position: relative;
+}
+.card-item:hover { border-color: rgba(255,107,53,0.5); background: rgba(255,107,53,0.05); }
+.card-item.selected { border-color: #ff6b35; background: rgba(255,107,53,0.15); }
+.card-item.disabled { opacity: 0.4; cursor: not-allowed; }
+.card-icon { font-size: 22px; }
+.card-name { font-size: 11px; font-weight: bold; margin: 2px 0; }
+.card-cost { font-size: 11px; color: #f7c59f; }
+.card-stats { font-size: 10px; color: #aaa; }
+
+.buy-btn {
+  width: 100%; padding: 8px; border: none; border-radius: 8px;
+  background: #4ecdc4; color: #1a1a2e; font-weight: bold;
+  cursor: pointer; font-size: 13px; margin-top: 8px; transition: all 0.2s;
+}
+.buy-btn:hover { opacity: 0.85; }
+.buy-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Selected units */
+.units-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.unit-badge {
+  padding: 4px 8px; border-radius: 20px; font-size: 12px;
+  display: flex; align-items: center; gap: 4px;
+}
+
+/* Log */
+.log-box { max-height: 150px; overflow-y: auto; }
+.log-msg { font-size: 12px; color: #aaa; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.log-msg:last-child { color: #fff; }
+
+/* Turn info */
+.turn-info { text-align: center; }
+.turn-name { font-size: 18px; font-weight: bold; margin-bottom: 4px; }
+.turn-phase { font-size: 13px; color: #aaa; }
+.end-turn-btn {
+  width: 100%; padding: 10px; margin-top: 8px;
+  border: none; border-radius: 10px; background: #e74c3c;
+  color: #fff; font-weight: bold; cursor: pointer; font-size: 14px;
+  transition: all 0.2s;
+}
+.end-turn-btn:hover { background: #c0392b; }
+.end-turn-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; backdrop-filter: blur(4px);
+}
+.modal {
+  background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px; padding: 30px; max-width: 400px; width: 90%;
+  text-align: center;
+}
+.modal h2 { font-size: 24px; margin-bottom: 16px; }
+.modal p { color: #aaa; margin-bottom: 20px; }
+
+/* Base selector */
+.base-selector-info {
+  background: rgba(255,107,53,0.1); border: 1px solid rgba(255,107,53,0.3);
+  border-radius: 10px; padding: 10px; font-size: 13px; text-align: center;
+  margin-bottom: 8px;
+}
+
+/* Waiting */
+#waitingScreen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+.spinner {
+  width: 60px; height: 60px; border: 4px solid rgba(255,255,255,0.1);
+  border-top-color: #ff6b35; border-radius: 50%;
+  animation: spin 1s linear infinite; margin-bottom: 20px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+.toast {
+  position: fixed; top: 20px; right: 20px; z-index: 9999;
+  background: #ff6b35; color: #fff; padding: 12px 20px;
+  border-radius: 10px; font-size: 14px; font-weight: bold;
+  animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+}
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes fadeOut { to { opacity: 0; transform: translateX(100%); } }
+
+/* Unit action modal */
+.action-btn {
+  width: 100%; padding: 10px; margin-bottom: 8px;
+  border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold;
+  transition: all 0.2s;
+}
+.action-move { background: #4ecdc4; color: #1a1a2e; }
+.action-attack { background: #e74c3c; color: #fff; }
+.action-cancel { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+
+.phase-badge {
+  padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;
+  background: rgba(255,107,53,0.2); color: #ff6b35; border: 1px solid rgba(255,107,53,0.3);
+}
+
+.juice-display {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 16px; font-weight: bold; color: #f7c59f;
+}
+
+/* Deck selection */
+#deckScreen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  padding: 20px;
+}
+.deck-box {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 30px;
+  width: 600px;
+  max-width: 100%;
+}
+.deck-box h2 { text-align: center; margin-bottom: 8px; }
+.deck-box p { text-align: center; color: #aaa; margin-bottom: 20px; font-size: 14px; }
+.deck-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.deck-card {
+  padding: 15px; border-radius: 12px; cursor: pointer;
+  border: 2px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.03); transition: all 0.2s; text-align: center;
+}
+.deck-card:hover { border-color: rgba(255,107,53,0.5); }
+.deck-card.selected { border-color: #ff6b35; background: rgba(255,107,53,0.1); }
+.deck-card .icon { font-size: 32px; margin-bottom: 8px; }
+.deck-card .name { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+.deck-card .cost { font-size: 12px; color: #f7c59f; margin-bottom: 4px; }
+.deck-card .stats { font-size: 11px; color: #aaa; }
+.deck-selected { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; min-height: 36px; }
+.deck-badge {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 20px; font-size: 12px;
+  background: rgba(255,107,53,0.2); border: 1px solid rgba(255,107,53,0.3);
+}
+.deck-badge .remove { cursor: pointer; color: #ff6b35; font-weight: bold; margin-left: 4px; }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="authScreen">
+  <div class="auth-box">
+    <h1>⭐ Звёздная Битва</h1>
+    <p>Пошаговая стратегия</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Войти</button>
+      <button class="auth-tab" onclick="switchTab('register')">Регистрация</button>
+    </div>
+    <div id="loginForm">
+      <input type="email" id="loginEmail" placeholder="Email">
+      <input type="password" id="loginPass" placeholder="Пароль">
+      <button class="btn" onclick="login()">Войти</button>
+    </div>
+    <div id="registerForm" style="display:none">
+      <input type="text" id="regName" placeholder="Имя игрока">
+      <input type="email" id="regEmail" placeholder="Email">
+      <input type="password" id="regPass" placeholder="Пароль (мин. 6 символов)">
+      <button class="btn" onclick="register()">Зарегистрироваться</button>
+    </div>
+    <div id="authMsg"></div>
+  </div>
+</div>
+
+<!-- WAITING -->
+<div id="waitingScreen">
+  <div class="spinner"></div>
+  <h2>Ожидание игроков...</h2>
+  <p id="waitingInfo" style="color:#aaa;margin-top:8px"></p>
+  <button class="btn btn-secondary" style="width:200px;margin-top:20px" onclick="leaveRoom()">Выйти</button>
+</div>
+
+<!-- LOBBY -->
+<div id="lobbyScreen">
+  <div class="lobby-box">
+    <div class="user-info">
+      <span id="lobbyUserName">Игрок</span>
+      <button class="btn btn-secondary" style="width:auto;padding:8px 16px;font-size:13px" onclick="logout()">Выйти</button>
+    </div>
+    <h2>🎮 Лобби</h2>
+    <p style="color:#aaa;margin-bottom:16px;font-size:14px">Создайте комнату или присоединитесь</p>
+    <div style="margin-bottom:16px">
+      <p style="font-size:13px;color:#aaa;margin-bottom:8px">Количество игроков:</p>
+      <div class="player-count">
+        <button class="count-btn active" onclick="selectCount(2)" id="cnt2">2</button>
+        <button class="count-btn" onclick="selectCount(3)" id="cnt3">3</button>
+        <button class="count-btn" onclick="selectCount(4)" id="cnt4">4</button>
+        <button class="count-btn" onclick="selectCount(6)" id="cnt6">6</button>
+      </div>
+    </div>
+    <div class="room-actions">
+      <button class="btn" onclick="createRoom()">Создать комнату</button>
+    </div>
+    <div class="rooms-list" id="roomsList">
+      <h3 style="font-size:13px;color:#aaa;margin-top:16px;margin-bottom:8px">ОТКРЫТЫЕ КОМНАТЫ</h3>
+      <div id="roomsItems"><p style="color:#aaa;font-size:13px">Загрузка...</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- DECK SELECTION -->
+<div id="deckScreen">
+  <div class="deck-box">
+    <h2>🃏 Выберите колоду</h2>
+    <p>Выберите до 6 карт для своей колоды (можно дублировать)</p>
+    <div class="deck-cards" id="deckCardsList"></div>
+    <p style="font-size:13px;color:#aaa;margin-bottom:8px">Выбрано (<span id="deckCount">0</span>/6):</p>
+    <div class="deck-selected" id="deckSelected"></div>
+    <button class="btn" id="confirmDeckBtn" onclick="confirmDeck()" disabled>Подтвердить колоду</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="gameScreen">
+  <div class="game-header">
+    <div>
+      <span style="font-size:18px;font-weight:bold">⭐ Звёздная Битва</span>
+    </div>
+    <div id="headerTurnInfo" class="turn-info">
+      <span class="turn-name" id="headerTurnName">-</span>
+      <span class="phase-badge" id="headerPhase">Ожидание</span>
+    </div>
+    <button class="btn btn-secondary" style="width:auto;padding:8px 16px;font-size:13px" onclick="leaveRoom()">Выйти</button>
+  </div>
+
+  <div class="game-main">
+    <!-- Board -->
+    <div id="boardContainer">
+      <canvas id="gameCanvas" width="520" height="520"></canvas>
+    </div>
+
+    <!-- Side panel -->
+    <div class="side-panel">
+      <!-- Players -->
+      <div class="panel-box">
+        <h3>Игроки</h3>
+        <div id="playersList"></div>
+      </div>
+
+      <!-- Turn -->
+      <div class="panel-box">
+        <div class="turn-info">
+          <div class="turn-name" id="currentTurnName">-</div>
+          <div class="turn-phase" id="currentPhase">-</div>
+          <div class="juice-display" style="justify-content:center;margin-top:6px">
+            🧃 <span id="myJuice">0</span> сока
+          </div>
+        </div>
+      </div>
+
+      <!-- Roulette -->
+      <div class="panel-box" id="roulettePanel">
+        <h3>Рулетка</h3>
+        <div class="roulette-area">
+          <div class="roulette-wheel" id="rouletteWheel">
+            <div class="roulette-center" id="rouletteNum">?</div>
+          </div>
+          <div class="roulette-result" id="rouletteResult"></div>
+          <button class="spin-btn" id="spinBtn" onclick="spinRoulette()" disabled>Крутить!</button>
+        </div>
+      </div>
+
+      <!-- Shop -->
+      <div class="panel-box" id="shopPanel">
+        <h3>Магазин колоды</h3>
+        <div class="shop-grid" id="shopGrid"></div>
+        <button class="buy-btn" id="buyBtn" onclick="buyCard()" disabled>Купить карту</button>
+        <div style="margin-top:8px">
+          <p style="font-size:11px;color:#aaa;margin-bottom:4px">Куплено:</p>
+          <div class="units-list" id="boughtUnits"></div>
+        </div>
+        <button class="end-turn-btn" id="endTurnBtn" onclick="endTurn()" disabled>Завершить ход →</button>
+      </div>
+
+      <!-- Log -->
+      <div class="panel-box">
+        <h3>Журнал</h3>
+        <div class="log-box" id="gameLog"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div id="modalOverlay" class="modal-overlay" style="display:none" onclick="closeModalOutside(event)">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+// ===== SUPABASE =====
+const SUPABASE_URL = "https://cayhxupqrevawfxgcvqm.supabase.co";
+const SUPABASE_KEY = "sb_publishable_bxQes_1IX6cMh9HWlfZdMA__5kVY8r4";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ===== STATE =====
+let currentUser = null;
+let currentRoom = null;
+let gameState = null;
+let myPlayerId = null;
+let selectedCard = null;
+let selectedUnit = null;
+let actionMode = null; // 'move', 'attack', 'rocket'
+let deckSelection = [];
+let rouletteChannel = null;
+let rotationDeg = 0;
+let spinning = false;
+let pendingSixCount = 0;
+
+// ===== CARDS DEF =====
+const CARDS = {
+  pawn: { id:'pawn', name:'Пешка', icon:'♟️', cost:1, hp:1, damage:1, description:'Базовая боевая единица' },
+  bigpawn: { id:'bigpawn', name:'Большая пешка', icon:'♞', cost:2, hp:2, damage:2, description:'Усиленная пешка' },
+  tank: { id:'tank', name:'Танк', icon:'🚀', cost:6, hp:5, damage:3, description:'Мощный и живучий' },
+  helicopter: { id:'helicopter', name:'Вертолёт', icon:'🚁', cost:6, hp:1, damage:99, description:'Бьёт по всей линии (жёлтой или фиолетовой), убивает всех включая своих!' },
+  rpg: { id:'rpg', name:'РПГ', icon:'💣', cost:4, hp:2, damage:5, description:'Высокий урон' },
+  rocket: { id:'rocket', name:'Ракета', icon:'🎯', cost:4, hp:2, damage:2, description:'Бьёт по любой клетке и убивает всех в радиусе 1' },
+  elitepawn: { id:'elitepawn', name:'Элитная пешка', icon:'👑', cost:0, hp:4, damage:3, description:'Бонус за двойную шестёрку!' },
+};
+
+const PLAYER_COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c'];
+const PLAYER_COLOR_NAMES = ['Красный','Синий','Зелёный','Жёлтый','Фиолетовый','Бирюзовый'];
+
+// ===== BOARD GEOMETRY =====
+// Chinese checkers star - 6 pointed star
+// We'll create a hex grid board
+
+const BOARD_SIZE = 260; // half size
+const CX = 260, CY = 260; // center
+
+// Define all cells of chinese checkers board
+// 121 cells total in standard chinese checkers
+// We'll define zones: center hexagon + 6 triangular points
+
+function buildBoard() {
+  const cells = [];
+  const cellMap = {};
+  
+  // Standard Chinese Checkers positions using axial coordinates
+  // The board is a 5-row hexagon plus 6 triangle tips
+  
+  const HEX_SIZE = 22;
+  
+  function hexToPixel(q, r) {
+    const x = CX + HEX_SIZE * (3/2 * q);
+    const y = CY + HEX_SIZE * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r);
+    return { x, y };
+  }
+  
+  // Chinese checkers has a star shape
+  // Define regions:
+  // Center hexagon: rows -4 to 4
+  // 6 triangle points at corners
+  
+  const starCells = getStarCells();
+  
+  starCells.forEach(({q, r, zone}, i) => {
+    const pos = hexToPixel(q, r);
+    const id = `${q},${r}`;
+    cells.push({ id, q, r, x: pos.x, y: pos.y, zone });
+    cellMap[id] = cells[cells.length - 1];
+  });
+  
+  // Build adjacency
+  const dirs = [[1,0],[-1,0],[0,1],[0,-1],[1,-1],[-1,1]];
+  cells.forEach(cell => {
+    cell.neighbors = [];
+    dirs.forEach(([dq,dr]) => {
+      const nid = `${cell.q+dq},${cell.r+dr}`;
+      if(cellMap[nid]) cell.neighbors.push(nid);
+    });
+  });
+  
+  return { cells, cellMap };
+}
+
+function getStarCells() {
+  const cells = [];
+  
+  // Center hexagon (radius 4)
+  for(let q = -4; q <= 4; q++) {
+    for(let r = -4; r <= 4; r++) {
+      if(Math.abs(q+r) <= 4) {
+        let zone = 'center';
+        cells.push({q, r, zone});
+      }
+    }
+  }
+  
+  // 6 triangle tips
+  // Top (red zone) - q=0,r=-5 to r=-8 triangle
+  // We'll add triangle points for each corner
+  
+  // Top triangle (pointing up) - zone 'top'
+  for(let row = 0; row < 4; row++) {
+    for(let col = 0; col <= row; col++) {
+      const q = col - row; // shifted
+      const r = -(5 + row) + col;
+      // Recalculate properly
+    }
+  }
+  
+  // Let me use a different approach - explicit star coordinates
+  // Standard Chinese Checkers 121 holes
+  
+  // Actually let me just define it properly
+  // The star = big hexagon minus 6 corner triangles of the hexagon
+  // OR center hexagon + 6 small triangles at tips
+  
+  // Using the "triangle" representation:
+  // Each player's home is a triangle of 10 cells (rows 1,2,3,4)
+  
+  // Player zones: top, top-right, bot-right, bot, bot-left, top-left
+  
+  // Adding tip triangles
+  const tips = [
+    { dir: [0,-1], zone:'top', base:[[-1,-4],[0,-4],[1,-5],[0,-5],[-1,-5],[0,-6],[1,-6],[-1,-6],[0,-7],[0,-8] } },
+    // Actually let me just hardcode the star shape
+  ];
+  
+  return cells; // return center for now, we'll add tips below
+}
+
+// Let me take a completely different, cleaner approach to the board
+function buildStarBoard() {
+  const cells = [];
+  const cellMap = {};
+  const HEX_R = 22;
+  
+  function hex2px(q, r) {
+    return {
+      x: CX + HEX_R * 1.5 * q,
+      y: CY + HEX_R * (Math.sqrt(3) * r + Math.sqrt(3)/2 * q)
+    };
+  }
+  
+  function addCell(q, r, zone) {
+    const id = `${q},${r}`;
+    if(!cellMap[id]) {
+      const p = hex2px(q,r);
+      const cell = {id, q, r, x:p.x, y:p.y, zone, unit:null};
+      cells.push(cell);
+      cellMap[id] = cell;
+    }
+  }
+  
+  // Center hexagon radius 4
+  for(let q=-4;q<=4;q++){
+    for(let r=-4;r<=4;r++){
+      if(Math.abs(q+r)<=4 && Math.abs(q)<=4 && Math.abs(r)<=4){
+        addCell(q,r,'center');
+      }
+    }
+  }
+  
+  // Top triangle (pointing up, away from center) - zone 'p0'
+  // Tip at (0, -8), grows towards center
+  for(let i=1;i<=4;i++){
+    for(let j=0;j<i;j++){
+      const q = j - Math.floor(i/2) - (i%2===0?0:0);
+      // Simpler: row i from tip, cells go from left to right
+      const r = -(4+i);
+      // q ranges: -(i-1) to (i-1) step... hmm
+    }
+  }
+  
+  // Let me just hardcode the 10 cells per tip triangle
+  // Top tip (p0): center of base is at top of center hex
+  // Top of center hex touching at q=0,r=-4 and q=1,r=-5.. etc
+  
+  // I'll use a known list of chinese checkers coordinates
+  // Top triangle cells (6 triangles of 10 cells each):
+  
+  const tipTriangles = [
+    // top (p0): apex up
+    { zone:'p0', cells: [[0,-5],[−1,−5],[1,−5],[−2,−5],[0,−6],[2,−5],[−1,−6],[1,−6],[0,−7],[0,−8]] },
+  ];
+  // This is getting complex. Let me use a simpler hardcoded approach.
+  
+  return {cells, cellMap};
+}
+
+// FINAL CLEAN BOARD IMPLEMENTATION
+const HEX_R = 21;
+
+function hexPx(q, r) {
+  return {
+    x: CX + HEX_R * 1.732 * (q + r * 0.5),
+    y: CY + HEX_R * 1.5 * r
+  };
+}
+
+function buildFinalBoard() {
+  const cells = [];
+  const cellMap = {};
+  
+  function add(q, r, zone) {
+    const id = `${q},${r}`;
+    if(cellMap[id]) return;
+    const p = hexPx(q, r);
+    const c = {id, q, r, x:p.x, y:p.y, zone, unit:null};
+    cells.push(c);
+    cellMap[id] = c;
+  }
+  
+  // Center hex (radius 4) — 61 cells
+  for(let q=-4;q<=4;q++){
+    const r1 = Math.max(-4,-q-4), r2 = Math.min(4,-q+4);
+    for(let r=r1;r<=r2;r++) add(q,r,'center');
+  }
+  
+  // 6 tip triangles, each 10 cells
+  // Directions in flat-top hex (q,r axial):
+  // p0 = top:       tip direction (-4, +8) relative... 
+  // Actually I'll use cube coords: s = -q-r
+  // Tip direction for each player:
+  // p0: top        → r decreases (north)
+  // p1: top-right  → q increases, r decreases (NE)  
+  // p2: bot-right  → q increases (SE... wait)
+  // For pointy-top hex: 
+  //   top:     (0,-1) dir = r--
+  //   top-right: (1,-1) 
+  //   bot-right: (1,0)
+  //   bot:      (0,1)
+  //   bot-left: (-1,1)
+  //   top-left: (-1,0)
+  
+  // Tip triangles for each of 6 players:
+  // The boundary of center at each direction, then add a triangle
+  
+  // Top triangle (p0, red), apex at (0,-8)
+  // rows from r=-5 to r=-8:
+  // r=-5: q from -3 to 0  (but only outside center... center ends at r=-4 with q=-4+(-4-r)... )
+  // Center at r=-5: doesn't exist (max r with q in center is r=-4 when q=0,so r=-5 is outside)
+  // Let me just compute:
+  
+  // For row r (negative = top), the center goes from r=-4+max(0,-q)... 
+  // More precisely: center exists if |q|<=4 && |r|<=4 && |q+r|<=4
+  
+  // Top tip (zone p0): the triangle above center
+  // These are cells where r < -4 (above center)
+  // and they form a triangle: at row r=-5, 3 cells; r=-6, 2 cells; r=-7, 1 cell; r=-8 (apex), 0... 
+  // Wait standard chinese checkers: 4,3,2,1 = 10 cells
+  // r=-5: 4 cells  q ∈ {-3,-2,-1,0}? Let me check neighbor of center edge
+  // Center edge at top: cells (q,r) where r=-4 and |q|<=4 and |q+r|<=4 → q+r=-4+q, need |-4+q|<=4 → 0<=q<=8... and |q|<=4 → q∈{0,1,2,3,4}? No: q∈{-4,..,4} and r=-4+something
+  // Hmm let me just define them explicitly based on the image
+  
+  // I'll define all 6 tip triangles by offset from center
+  // Each tip: 4 rows of 1,2,3,4 cells = 10 cells total
+  // Direction vectors per tip (pointing outward):
+  // Using "offset rows" approach
+  
+  // Tip zones in order: p0(top,red), p1(top-right,green), p2(bot-right,yellow), 
+  //                     p3(bot,red2), p4(bot-left,green2), p5(top-left,yellow2)
+  // We'll use 2 player zones for 2-player game (opposite sides)
+  
+  // Hardcode the tip cell coordinates:
+  
+  // TOP (p0) - pointy top orientation
+  const tipCells = {
+    p0: [ // top triangle
+      [0,-5],[1,-5],[-1,-5],[2,-5],[-2,-5],  // actually wrong...
+    ]
+  };
+  
+  // Ok I'll use a proven formula. In axial coords (q,r):
+  // The 6 corners of the Chinese Checkers star:
+  // For a standard board with center size 4, each arm has 4 rows
+  
+  // ARM DIRECTION VECTORS (cube: move in one axis direction repeatedly):
+  // The 6 arms extend in directions:
+  // (0, -1): top (r decreases)
+  // (1, -1): top-right
+  // (1, 0) : bottom-right  
+  // (0, 1) : bottom
+  // (-1, 1): bottom-left
+  // (-1, 0): top-left
+  
+  // For top arm: start from edge cells at r=-4, extend upward
+  // Edge cells at r=-4 in center: q from 0 to 4 (since q+r must be ≤4: q≤8, and q≥-4+4=0)
+  // Wait: r=-4, |r|=4✓, |q|≤4, |q+r|=|q-4|≤4 → 0≤q≤8, combined with |q|≤4 → 0≤q≤4
+  // So 5 cells at r=-4: q∈{0,1,2,3,4}... but that's the bottom edge of top direction
+  
+  // Hmm for a symmetric board I want the top arm to be centered at q=0
+  // Let me use a different orientation: 
+  // pointy-top hexagons where top arm is at r-axis direction
+  
+  // After much deliberation, let me just use a pre-computed set of coordinates
+  // I know from Chinese Checkers literature:
+  
+  // Using "doubled coordinate" or just list them:
+  
+  // TOP TIP (p0): 
+  const p0 = [[-1,-5],[0,-5],[1,-5],[-1,-6],[0,-6],[-2,-6],[1,-6],[-1,-7],[0,-7],[0,-8]];
+  // This doesn't quite work either. Let me use a single orientation.
+  
+  // I'm going to use a completely explicit, image-based coordinate system.
+  // Looking at the image: it's a star with 6 points, each with orange circle bases.
+  // I'll define cells in a simple row/col grid mapped to hex positions.
+  
+  // SIMPLIFICATION: I'll use a flat 2D grid and mark which cells are valid
+  // This is cleaner for rendering too.
+  
+  p0.forEach(([q,r]) => add(q,r,'p0'));
+  
+  // BOTTOM TIP (p3) - opposite to p0
+  const p3 = [[1,5],[0,5],[-1,5],[1,6],[0,6],[2,6],[-1,6],[1,7],[0,7],[0,8]];
+  p3.forEach(([q,r]) => add(q,r,'p3'));
+  
+  // TOP-RIGHT TIP (p1)
+  const p1 = [[4,-3],[5,-3],[4,-4],[5,-4],[6,-3],[4,-5],[5,-5],[6,-4],[5,-6],[6,-5]];
+  p1.forEach(([q,r]) => add(q,r,'p1'));
+  // Hmm these coordinates might not be right, let me think...
+  // For top-right: move in direction (1,-1) from center
+  // Center right edge: q=4, r from -4 to 0 (where q+r≤4: 4+r≤4 → r≤0, 4+r≥-4 → r≥-8, |r|≤4)
+  // → r ∈ {-4,-3,-2,-1,0} at q=4
+  // Cells outside center to top-right...
+  
+  // I'll settle for a working approximation and clean it up
+  
+  // BOT-LEFT (p4) - opposite to p1
+  const p4 = [[-4,3],[-5,3],[-4,4],[-5,4],[-6,3],[-4,5],[-5,5],[-6,4],[-5,6],[-6,5]];
+  p4.forEach(([q,r]) => add(q,r,'p4'));
+  
+  // BOT-RIGHT (p2)
+  const p2 = [[4,0],[5,0],[4,1],[5,1],[6,0],[4,2],[5,2],[6,1],[5,3],[6,2]];
+  // Hmm these overlap with center... q=4,r=0 is in center (|q|=4, |r|=0, |q+r|=4 ✓)
+  // I need cells OUTSIDE center in p2 direction
+  // Direction bot-right: q increases, r increases? In my coord system it should be...
+  
+  // OK. I'm spending too much time on exact coordinates. Let me use a KNOWN CORRECT set.
+  
+  // FINAL ANSWER: I'll use pre-computed correct chinese checkers coordinates
+  // from a reference implementation.
+  
+  return {cells, cellMap};
+}
+
+// ============================
+// DEFINITIVE BOARD - hardcoded correct coordinates
+// ============================
+
+function createBoard() {
+  const cells = {};
+  const HEX_SIZE = 22;
+  
+  // pointy-top hexagon pixel conversion
+  function toPx(q, r) {
+    return {
+      x: CX + HEX_SIZE * Math.sqrt(3) * (q + r/2),
+      y: CY + HEX_SIZE * 3/2 * r
+    };
+  }
+  
+  function add(q, r, zone) {
+    const id = `${q},${r}`;
+    if(!cells[id]) {
+      const p = toPx(q,r);
+      cells[id] = {id,q,r,x:p.x,y:p.y,zone,unit:null};
+    }
+  }
+  
+  // CENTER HEX (radius 4) - 61 cells
+  for(let q=-4;q<=4;q++){
+    const r1=Math.max(-4,-q-4), r2=Math.min(4,-q+4);
+    for(let r=r1;r<=r2;r++) add(q,r,'center');
+  }
+  
+  // TIP TRIANGLES (each 10 cells, outside center)
+  // These are cells with cube coordinates where one component > 4
+  
+  // Top tip - p0 (red): s = -q-r > 4 and r < 0 and q < 0? 
+  // In cube: s = -q-r. For top tip: q and r both negative
+  // Actually easier: cells where r < -4 (above center in pointy-top)
+  // At r=-5: center needs |q|≤4 and |q+r|=|q-5|≤4 → 1≤q≤9, combined → 1≤q≤4 (4 cells)
+  // But we want a triangle: r=-5 has 4 cells, r=-6 has 3, r=-7 has 2, r=-8 has 1
+  
+  // TOP tip cells (r goes from -5 to -8):
+  for(let r=-5;r>=-8;r--){
+    const width = r+9; // r=-5→4, r=-6→3, r=-7→2, r=-8→1
+    const qStart = -(width-1); // center-align: symmetric around q+ some offset
+    // At r=-5 in a symmetric top tip centered at q=0:
+    // q range: q+r ≥ -4 → q ≥ -4-r = -4+5=1? No...
+    // Hmm. Actually with pointy-top and the star orientation:
+    // Let me look at this differently.
+    // The cells JUST outside center at top: at r=-5, which q values are adjacent to center?
+    // Center at r=-4: q from 0 to 4. Above those: r=-5, q from 0 to... 
+    // Let me just pick q ranges that look right:
+    for(let dq=0;dq<width;dq++){
+      const q = dq; // q from 0 to width-1
+      add(q, r, 'p0');
+    }
+  }
+  
+  // BOTTOM tip - p3 (opposite p0): r from 5 to 8
+  for(let r=5;r<=8;r++){
+    const width = 9-r;
+    for(let dq=0;dq<width;dq++){
+      const q = -dq;
+      add(q,r,'p3');
+    }
+  }
+  
+  // Let me verify these look okay visually... actually let me just go with 
+  // a different complete definition I know works.
+  
+  // I'll delete my half-baked attempts and use THE definitive list:
+  
+  // Known correct Chinese Checkers axial coordinates:
+  // (Using pointy-top, the star has tips at 6 compass points)
+  
+  // RESET and use cube coordinates properly
+  Object.keys(cells).forEach(k => { if(cells[k].zone !== 'center') delete cells[k]; });
+  
+  // In cube coordinates (x,y,z) where x+y+z=0:
+  // Using axial (q,r) where cube_x=q, cube_z=r, cube_y=-q-r
+  
+  // The 6 tips of Chinese Checkers star:
+  // Each tip triangle has apex at distance 8 from center, contains 10 cells
+  
+  // TIP 0 (top, zone p0): apex at (0,-4,-(-4)) wait...
+  // With pointy-top: "top" direction = r negative
+  // Apex: q=0, r=-8 (cube: x=0,y=8,z=-8)
+  // Rows at r=-5,-6,-7,-8: widths 4,3,2,1
+  // q range at row r: centered at q=0, but constraint is cells adjacent/connected
+  // At r=-5: q from 0 to 3 (touching center edge r=-4 which has q 0..4)
+  // Actually: for tip cells at row r (r<-4), q ranges from 0 to -(r+5)... ugh
+  
+  // You know what, let me just hardcode each tip manually:
+  
+  // p0 (top): 10 cells
+  [
+    [0,-5],[1,-5],[2,-5],[3,-5],  // row r=-5, 4 cells
+    [0,-6],[1,-6],[2,-6],          // row r=-6, 3 cells
+    [0,-7],[1,-7],                  // row r=-7, 2 cells
+    [0,-8]                          // row r=-8, 1 cell (apex)
+  ].forEach(([q,r])=>add(q,r,'p0'));
+  
+  // p3 (bottom): 10 cells (mirror of p0)
+  [
+    [-3,5],[-2,5],[-1,5],[0,5],
+    [-2,6],[-1,6],[0,6],
+    [-1,7],[0,7],
+    [0,8]
+  ].forEach(([q,r])=>add(q,r,'p3'));
+  
+  // p1 (top-right): direction (+q, -r, q-r increases)
+  [
+    [4,-3],[5,-3],[5,-4],[5,-5],[4,-5],  // hmm need 10
+    // Let me think: top-right tip is in direction of increasing q and decreasing r
+    // cube direction: (1,-1,0) repeated
+  ].forEach(([q,r])=>add(q,r,'p1'));
+  
+  // I'll just directly compute the 6 rotated versions of p0:
+  // Rotate p0 cells by 60°, 120°, 180°, 240°, 300°
+  
+  function rotCube60(q,r) {
+    // Cube rotation 60°: (x,y,z) → (-z,-x,-y) in cube? 
+    // Actually 60° CW in cube: (x,y,z)→(-y,-z,-x)
+    // axial q=x, r=z, s=-x-r=-q-r
+    const x=q, z=r, y=-q-r;
+    const nx=-y, ny=-z, nz=-x;
+    return [nx, nz]; // new q=nx, new r=nz
+  }
+  
+  function rotateTip(cells60, times) {
+    return cells60.map(([q,r])=>{
+      let cq=q,cr=r;
+      for(let i=0;i<times;i++) [cq,cr]=rotCube60(cq,cr);
+      return [cq,cr];
+    });
+  }
+  
+  const p0cells = [
+    [0,-5],[1,-5],[2,-5],[3,-5],
+    [0,-6],[1,-6],[2,-6],
+    [0,-7],[1,-7],
+    [0,-8]
+  ];
+  
+  // Generate all 6 tips by rotation
+  const zones = ['p0','p1','p2','p3','p4','p5'];
+  Object.keys(cells).forEach(k=>{ if(cells[k].zone!=='center') delete cells[k]; });
+  
+  p0cells.forEach(([q,r])=>add(q,r,'p0'));
+  
+  for(let t=1;t<=5;t++){
+    const rotated = rotateTip(p0cells, t);
+    rotated.forEach(([q,r])=>add(q,r,`p${t}`));
+  }
+  
+  // Build neighbor lists
+  const dirs = [[1,0],[-1,0],[0,1],[0,-1],[1,-1],[-1,1]];
+  Object.values(cells).forEach(cell=>{
+    cell.neighbors = [];
+    dirs.forEach(([dq,dr])=>{
+      const nid=`${cell.q+dq},${cell.r+dr}`;
+      if(cells[nid]) cell.neighbors.push(nid);
+    });
+  });
+  
+  return cells;
+}
+
+// ===== BOARD INSTANCE =====
+let board = {};
+let bases = []; // Spawn base cells (orange circles)
+
+function initBoard() {
+  board = createBoard();
+  
+  // Define base cells: one per player zone (apex of each tip triangle)
+  // p0 apex: [0,-8], p1: rotated, etc.
+  const p0cells = [
+    [0,-5],[1,-5],[2,-5],[3,-5],
+    [0,-6],[1,-6],[2,-6],
+    [0,-7],[1,-7],
+    [0,-8]
+  ];
+  
+  // Find apex of each zone (the most extreme cell)
+  bases = [];
+  for(let t=0;t<6;t++){
+    const zone = `p${t}`;
+    const zoneCells = Object.values(board).filter(c=>c.zone===zone);
+    if(zoneCells.length > 0) {
+      // Apex is farthest from center
+      const apex = zoneCells.reduce((a,b)=>{
+        const da = Math.sqrt(a.x*a.x+a.y*a.y);
+        const db = Math.sqrt(b.x*b.x+b.y*b.y);
+        return da>db?a:b;
+      });
+      bases.push({zone, cellId: apex.id, playerIdx: t});
+    }
+  }
+  
+  // Assign base candidate cells (all cells in each tip zone can be spawn points)
+  // Players choose which orange circle (base) to spawn at during setup
+}
+
+// ===== CANVAS DRAWING =====
+let canvas, ctx;
+
+function initCanvas() {
+  canvas = document.getElementById('gameCanvas');
+  ctx = canvas.getContext('2d');
+  canvas.addEventListener('click', onBoardClick);
+  canvas.addEventListener('mousemove', onBoardHover);
+}
+
+let hoveredCell = null;
+
+function onBoardHover(e) {
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX-rect.left)*(canvas.width/rect.width);
+  const my = (e.clientY-rect.top)*(canvas.height/rect.height);
+  hoveredCell = getCellAt(mx, my);
+  drawBoard();
+}
+
+function getCellAt(mx, my) {
+  let closest = null, minDist = 18;
+  Object.values(board).forEach(cell=>{
+    const d = Math.sqrt((cell.x-mx)**2+(cell.y-my)**2);
+    if(d < minDist) { minDist=d; closest=cell; }
+  });
+  return closest;
+}
+
+function onBoardClick(e) {
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX-rect.left)*(canvas.width/rect.width);
+  const my = (e.clientY-rect.top)*(canvas.height/rect.height);
+  const cell = getCellAt(mx, my);
+  if(!cell) return;
+  
+  handleCellClick(cell);
+}
+
+function handleCellClick(cell) {
+  if(!gameState || !isMyTurn()) return;
+  
+  const phase = gameState.phase;
+  
+  if(phase === 'base_select') {
+    // Select spawn base
+    if(bases.some(b=>b.zone===cell.zone) && !gameState.playerBases[myPlayerId]) {
+      selectBase(cell);
+    }
+    return;
+  }
+  
+  if(phase === 'move') {
+    if(actionMode === 'move' && selectedUnit) {
+      tryMoveUnit(cell);
+      return;
+    }
+    if(actionMode === 'attack' && selectedUnit) {
+      tryAttack(cell);
+      return;
+    }
+    if(actionMode === 'rocket_target' && selectedUnit) {
+      tryRocketAttack(cell);
+      return;
+    }
+    if(actionMode === 'heli_line' && selectedUnit) {
+      // helicopter selects line
+      tryHeliAttack(cell);
+      return;
+    }
+    
+    // Click on a unit to select
+    if(cell.unit && cell.unit.owner === myPlayerId) {
+      if(!cell.unit.moved || !cell.unit.attacked) {
+        selectedUnit = cell;
+        showUnitActions(cell);
+      }
+    }
+  }
+  
+  if(phase === 'spawn') {
+    // Place bought unit on base cells
+    if(selectedCard) {
+      trySpawnUnit(cell);
+    }
+  }
+}
+
+const ZONE_COLORS = {
+  center: '#e8e8e8',
+  p0: '#e74c3c', // red - top
+  p1: '#2ecc71', // green - top-right
+  p2: '#f1c40f', // yellow - bot-right
+  p3: '#e74c3c', // red2 - bot (same team as p0 for 2p)
+  p4: '#2ecc71', // green2 - bot-left
+  p5: '#9b59b6', // purple - top-left
+};
+
+// Yellow lines: connecting p2(bot-right yellow) corners horizontally
+// Purple lines: connecting p5(top-left purple) and ... diagonally
+// These correspond to the image's yellow and purple triangle lines
+
+function drawBoard() {
+  if(!ctx) return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  
+  // Background
+  ctx.fillStyle = '#0d0d2e';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  
+  // Draw yellow triangle lines
+  drawTriangleLines();
+  
+  // Draw cells
+  Object.values(board).forEach(cell => drawCell(cell));
+  
+  // Draw units
+  Object.values(board).forEach(cell => {
+    if(cell.unit) drawUnit(cell);
+  });
+  
+  // Highlight selected unit
+  if(selectedUnit && board[selectedUnit.id]) {
+    const cell = board[selectedUnit.id];
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cell.x, cell.y, 14, 0, Math.PI*2);
+    ctx.stroke();
+  }
+  
+  // Highlight valid moves
+  if(actionMode && selectedUnit) {
+    drawValidMoves();
+  }
+  
+  // Highlight bases
+  drawBases();
+}
+
+function drawTriangleLines() {
+  // Yellow triangle: connects p2 zone corners (as seen in image)
+  // Find tip cells of zones p2, p4, p0 (forming one triangle) 
+  // and p1, p3, p5 (other triangle) — Star of David pattern
+  
+  const tipOf = (zone) => {
+    const cells = Object.values(board).filter(c=>c.zone===zone);
+    if(!cells.length) return null;
+    return cells.reduce((a,b)=>{
+      const da = (a.x-CX)**2+(a.y-CY)**2;
+      const db = (b.x-CX)**2+(b.y-CY)**2;
+      return da>db?a:b;
+    });
+  };
+  
+  // Yellow triangle (like in image): p0, p2, p4 
+  const yellowPts = ['p0','p2','p4'].map(tipOf).filter(Boolean);
+  if(yellowPts.length===3) {
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255,215,0,0.6)';
+    ctx.lineWidth = 2;
+    ctx.moveTo(yellowPts[0].x, yellowPts[0].y);
+    yellowPts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+    ctx.closePath();
+    ctx.stroke();
+  }
+  
+  // Purple triangle: p1, p3, p5
+  const purplePts = ['p1','p3','p5'].map(tipOf).filter(Boolean);
+  if(purplePts.length===3) {
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(180,100,255,0.6)';
+    ctx.lineWidth = 2;
+    ctx.moveTo(purplePts[0].x, purplePts[0].y);
+    purplePts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+    ctx.closePath();
+    ctx.stroke();
+  }
+}
+
+function drawCell(cell) {
+  const isHovered = hoveredCell && hoveredCell.id === cell.id;
+  const baseColor = ZONE_COLORS[cell.zone] || '#aaa';
+  
+  ctx.beginPath();
+  ctx.arc(cell.x, cell.y, 10, 0, Math.PI*2);
+  
+  // Fill
+  ctx.fillStyle = isHovered ? lightenColor(baseColor, 0.3) : baseColor;
+  ctx.fill();
+  
+  // Stroke
+  ctx.strokeStyle = isHovered ? '#fff' : 'rgba(0,0,0,0.3)';
+  ctx.lineWidth = isHovered ? 2 : 1;
+  ctx.stroke();
+}
+
+function drawUnit(cell) {
+  const unit = cell.unit;
+  const player = gameState?.players?.find(p=>p.id===unit.owner);
+  const color = player ? PLAYER_COLORS[player.colorIdx] : '#fff';
+  const card = CARDS[unit.type];
+  
+  // Unit circle
+  ctx.beginPath();
+  ctx.arc(cell.x, cell.y, 12, 0, Math.PI*2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  
+  // HP bar
+  const maxHp = card?.hp || 1;
+  const hpRatio = unit.hp / maxHp;
+  ctx.fillStyle = '#333';
+  ctx.fillRect(cell.x-10, cell.y-18, 20, 3);
+  ctx.fillStyle = hpRatio > 0.5 ? '#2ecc71' : hpRatio > 0.25 ? '#f39c12' : '#e74c3c';
+  ctx.fillRect(cell.x-10, cell.y-18, 20*hpRatio, 3);
+  
+  // Icon
+  ctx.fillStyle = '#fff';
+  ctx.font = '10px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(card?.icon || '?', cell.x, cell.y);
+  
+  // Dimmed if already moved and attacked
+  if(unit.moved && unit.attacked && unit.owner===myPlayerId) {
+    ctx.beginPath();
+    ctx.arc(cell.x,cell.y,12,0,Math.PI*2);
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fill();
+  }
+}
+
+function drawValidMoves() {
+  if(!selectedUnit || !board[selectedUnit.id]) return;
+  const cell = board[selectedUnit.id];
+  const unit = cell.unit;
+  if(!unit) return;
+  
+  if(actionMode === 'move') {
+    // Highlight reachable cells (not occupied)
+    const reachable = getReachable(cell);
+    reachable.forEach(id => {
+      const c = board[id];
+      if(!c) return;
+      ctx.beginPath();
+      ctx.arc(c.x,c.y,12,0,Math.PI*2);
+      ctx.fillStyle = 'rgba(78,205,196,0.4)';
+      ctx.fill();
+      ctx.strokeStyle = '#4ecdc4';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+  }
+  
+  if(actionMode === 'attack') {
+    // Highlight attackable cells (enemies in range 1)
+    cell.neighbors?.forEach(nid=>{
+      const nc = board[nid];
+      if(nc?.unit && nc.unit.owner !== myPlayerId) {
+        ctx.beginPath();
+        ctx.arc(nc.x,nc.y,12,0,Math.PI*2);
+        ctx.fillStyle = 'rgba(231,76,60,0.4)';
+        ctx.fill();
+        ctx.strokeStyle = '#e74c3c';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    });
+  }
+  
+  if(actionMode === 'rocket_target') {
+    // Any cell
+    Object.values(board).forEach(c=>{
+      if(c.id !== selectedUnit.id) {
+        ctx.beginPath();
+        ctx.arc(c.x,c.y,12,0,Math.PI*2);
+        ctx.fillStyle = 'rgba(255,107,53,0.2)';
+        ctx.fill();
+      }
+    });
+  }
+}
+
+function getReachable(cell, range=1) {
+  const visited = new Set([cell.id]);
+  const frontier = [cell.id];
+  const reachable = [];
+  
+  for(let step=0;step<range;step++) {
+    const next = [];
+    frontier.forEach(id=>{
+      const c = board[id];
+      c.neighbors?.forEach(nid=>{
+        if(!visited.has(nid) && !board[nid]?.unit) {
+          visited.add(nid);
+          next.push(nid);
+          reachable.push(nid);
+        }
+      });
+    });
+    frontier.length=0;
+    frontier.push(...next);
+  }
+  return reachable;
+}
+
+function drawBases() {
+  if(!gameState) return;
+  
+  // Draw orange circles on base cells (tip cells of each zone)
+  Object.values(board).forEach(cell=>{
+    const zone = cell.zone;
+    if(zone === 'center') return;
+    
+    // Check if this is a valid base cell
+    const playerIdx = parseInt(zone.replace('p',''));
+    if(playerIdx >= (gameState.players?.length || 0)) return;
+    
+    // Highlight base selection cells
+    if(gameState.phase === 'base_select' && isMyTurn()) {
+      const myPlayer = gameState.players?.find(p=>p.id===myPlayerId);
+      if(myPlayer && myPlayer.colorIdx !== undefined && !gameState.playerBases?.[myPlayerId]) {
+        const myZone = `p${myPlayer.colorIdx}`;
+        if(cell.zone === myZone) {
+          ctx.beginPath();
+          ctx.arc(cell.x,cell.y,14,0,Math.PI*2);
+          ctx.strokeStyle = '#ff6b35';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+      }
+    }
+    
+    // Show player bases
+    if(gameState.playerBases) {
+      Object.entries(gameState.playerBases).forEach(([pid, baseId])=>{
+        if(baseId === cell.id) {
+          ctx.beginPath();
+          ctx.arc(cell.x,cell.y,14,0,Math.PI*2);
+          const player = gameState.players?.find(p=>p.id===pid);
+          ctx.strokeStyle = player ? PLAYER_COLORS[player.colorIdx] : '#fff';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+      });
+    }
+  });
+}
+
+function lightenColor(hex, amt) {
+  // Simple lightening
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgb(${Math.min(255,r+amt*255)},${Math.min(255,g+amt*255)},${Math.min(255,b+amt*255)})`;
+}
+
+// ===== AUTH FUNCTIONS =====
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>{
+    t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register'));
+  });
+  document.getElementById('loginForm').style.display = tab==='login'?'block':'none';
+  document.getElementById('registerForm').style.display = tab==='register'?'block':'none';
+  document.getElementById('authMsg').textContent = '';
+}
+
+async function login() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if(!email||!pass) return showAuthMsg('Заполните все поля');
+  
+  showAuthMsg('Входим...');
+  const {data,error} = await sb.auth.signInWithPassword({email,password:pass});
+  if(error) return showAuthMsg(error.message);
+  currentUser = data.user;
+  await loadUserProfile();
+  showLobby();
+}
+
+async function register() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPass').value;
+  if(!name||!email||!pass) return showAuthMsg('Заполните все поля');
+  if(pass.length<6) return showAuthMsg('Пароль минимум 6 символов');
+  
+  showAuthMsg('Регистрируемся...');
+  const {data,error} = await sb.auth.signUp({
+    email,password:pass,
+    options:{data:{username:name}}
+  });
+  if(error) return showAuthMsg(error.message);
+  
+  currentUser = data.user;
+  // Create profile
+  if(currentUser) {
+    await sb.from('profiles').upsert({
+      id: currentUser.id,
+      username: name,
+      created_at: new Date().toISOString()
+    });
+  }
+  showAuthMsg('✅ Зарегистрировались! Войдите в аккаунт.');
+  switchTab('login');
+}
+
+async function loadUserProfile() {
+  if(!currentUser) return;
+  const {data} = await sb.from('profiles').select('*').eq('id',currentUser.id).single();
+  if(data) currentUser.username = data.username;
+  else currentUser.username = currentUser.user_metadata?.username || currentUser.email;
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  currentUser = null;
+  showScreen('authScreen');
+}
+
+function showAuthMsg(msg) {
+  document.getElementById('authMsg').textContent = msg;
+}
+
+// ===== LOBBY FUNCTIONS =====
+let selectedPlayerCount = 2;
+let roomsRefreshInterval = null;
+
+function selectCount(n) {
+  selectedPlayerCount = n;
+  [2,3,4,6].forEach(c=>{
+    document.getElementById(`cnt${c}`)?.classList.toggle('active',c===n);
+  });
+}
+
+async function showLobby() {
+  showScreen('lobbyScreen');
+  document.getElementById('lobbyUserName').textContent = `👤 ${currentUser.username || 'Игрок'}`;
+  await refreshRooms();
+  roomsRefreshInterval = setInterval(refreshRooms, 3000);
+}
+
+async function refreshRooms() {
+  const {data} = await sb.from('game_rooms')
+    .select('*')
+    .eq('status','waiting')
+    .order('created_at',{ascending:false});
+  
+  const el = document.getElementById('roomsItems');
+  if(!data||!data.length) {
+    el.innerHTML = '<p style="color:#aaa;font-size:13px">Нет открытых комнат</p>';
+    return;
+  }
+  
+  el.innerHTML = data.map(room=>`
+    <div class="room-item">
+      <div>
+        <div style="font-size:14px;font-weight:bold">${room.name||'Комната'}</div>
+        <div style="font-size:12px;color:#aaa">${room.player_count||0}/${room.max_players||2} игроков</div>
+      </div>
+      <button class="btn join-btn" onclick="joinRoom('${room.id}')">Войти</button>
+    </div>
+  `).join('');
+}
+
+async function createRoom() {
+  if(!currentUser) return;
+  clearInterval(roomsRefreshInterval);
+  
+  const initialState = createInitialGameState(selectedPlayerCount);
+  
+  const {data,error} = await sb.from('game_rooms').insert({
+    name: `Игра ${currentUser.username}`,
+    host_id: currentUser.id,
+    max_players: selectedPlayerCount,
+    player_count: 1,
+    status: 'waiting',
+    game_state: initialState,
+    players: [{
+      id: currentUser.id,
+      username: currentUser.username,
+      colorIdx: 0,
+      ready: false
+    }],
+    created_at: new Date().toISOString()
+  }).select().single();
+  
+  if(error) { showToast('Ошибка создания комнаты'); return; }
+  currentRoom = data;
+  myPlayerId = currentUser.id;
+  showWaiting();
+}
+
+async function joinRoom(roomId) {
+  clearInterval(roomsRefreshInterval);
+  
+  const {data:room} = await sb.from('game_rooms').select('*').eq('id',roomId).single();
+  if(!room) { showToast('Комната не найдена'); return; }
+  if(room.player_count >= room.max_players) { showToast('Комната заполнена'); return; }
+  
+  const players = room.players || [];
+  const colorIdx = players.length;
+  players.push({id:currentUser.id,username:currentUser.username,colorIdx,ready:false});
+  
+  const {data,error} = await sb.from('game_rooms')
+    .update({
+      players,
+      player_count: players.length
+    })
+    .eq('id',roomId)
+    .select().single();
+  
+  if(error) { showToast('Ошибка входа в комнату'); return; }
+  currentRoom = data;
+  myPlayerId = currentUser.id;
+  showWaiting();
+}
+
+async function leaveRoom() {
+  if(rouletteChannel) { sb.removeChannel(rouletteChannel); rouletteChannel=null; }
+  clearInterval(roomsRefreshInterval);
+  
+  if(currentRoom) {
+    // Remove player from room
+    const {data:room} = await sb.from('game_rooms').select('*').eq('id',currentRoom.id).single();
+    if(room) {
+      const players = (room.players||[]).filter(p=>p.id!==currentUser.id);
+      if(players.length===0) {
+        await sb.from('game_rooms').delete().eq('id',currentRoom.id);
+      } else {
+        await sb.from('game_rooms').update({
+          players,
+          player_count:players.length,
+          host_id: players[0].id
+        }).eq('id',currentRoom.id);
+      }
+    }
+    currentRoom = null;
+  }
+  
+  gameState = null;
+  myPlayerId = null;
+  selectedUnit = null;
+  actionMode = null;
+  selectedCard = null;
+  
+  await showLobby();
+}
+
+function showWaiting() {
+  showScreen('waitingScreen');
+  subscribeToRoom();
+}
+
+function subscribeToRoom() {
+  if(rouletteChannel) sb.removeChannel(rouletteChannel);
+  
+  rouletteChannel = sb.channel(`room:${currentRoom.id}`)
+    .on('postgres_changes',{
+      event:'UPDATE',
+      schema:'public',
+      table:'game_rooms',
+      filter:`id=eq.${currentRoom.id}`
+    }, handleRoomUpdate)
+    .subscribe();
+    
+  checkRoomStatus();
+}
+
+async function checkRoomStatus() {
+  const {data} = await sb.from('game_rooms').select('*').eq('id',currentRoom.id).single();
+  if(data) handleRoomUpdate({new:data});
+}
+
+function handleRoomUpdate(payload) {
+  const room = payload.new;
+  currentRoom = room;
+  
+  const players = room.players || [];
+  const waiting = document.getElementById('waitingScreen');
+  if(waiting.style.display !== 'none') {
+    document.getElementById('waitingInfo').textContent = 
+      `${players.length}/${room.max_players} игроков • ${players.map(p=>p.username).join(', ')}`;
+  }
+  
+  if(room.status === 'deck_selection') {
+    showDeckSelection();
+    return;
+  }
+  
+  if(room.status === 'playing') {
+    gameState = room.game_state;
+    showGame();
+    return;
+  }
+  
+  // Auto-start when full
+  if(room.status === 'waiting' && players.length >= room.max_players && room.host_id === currentUser.id) {
+    startDeckSelection(room);
+  }
+}
+
+async function startDeckSelection(room) {
+  await sb.from('game_rooms').update({
+    status: 'deck_selection'
+  }).eq('id',room.id);
+}
+
+// ===== DECK SELECTION =====
+function showDeckSelection() {
+  showScreen('deckScreen');
+  deckSelection = [];
+  renderDeckCards();
+}
+
+function renderDeckCards() {
+  const availableCards = Object.values(CARDS).filter(c=>c.id!=='elitepawn');
+  
+  document.getElementById('deckCardsList').innerHTML = availableCards.map(card=>`
+    <div class="deck-card" onclick="toggleDeckCard('${card.id}')">
+      <div class="icon">${card.icon}</div>
+      <div class="name">${card.name}</div>
+      <div class="cost">💧 ${card.cost} сока</div>
+      <div class="stats">❤️${card.hp} ⚔️${card.damage}</div>
+    </div>
+  `).join('');
+  
+  updateDeckUI();
+}
+
+function toggleDeckCard(cardId) {
+  if(deckSelection.length >= 6 && !deckSelection.includes(cardId)) {
+    showToast('Максимум 6 карт!'); return;
+  }
+  deckSelection.push(cardId);
+  updateDeckUI();
+}
+
+function removeDeckCard(idx) {
+  deckSelection.splice(idx,1);
+  updateDeckUI();
+}
+
+function updateDeckUI() {
+  document.getElementById('deckCount').textContent = deckSelection.length;
+  document.getElementById('deckSelected').innerHTML = deckSelection.map((cardId,i)=>{
+    const card = CARDS[cardId];
+    return `<div class="deck-badge">${card.icon} ${card.name} <span class="remove" onclick="removeDeckCard(${i})">✕</span></div>`;
+  }).join('');
+  document.getElementById('confirmDeckBtn').disabled = deckSelection.length < 1;
+}
+
+async function confirmDeck() {
+  if(deckSelection.length < 1) return;
+  
+  // Update player's deck in room
+  const {data:room} = await sb.from('game_rooms').select('*').eq('id',currentRoom.id).single();
+  const players = room.players || [];
+  const pi = players.findIndex(p=>p.id===currentUser.id);
+  if(pi>=0) {
+    players[pi].deck = deckSelection;
+    players[pi].ready = true;
+  }
+  
+  await sb.from('game_rooms').update({players}).eq('id',currentRoom.id);
+  
+  // Check if all ready → start game
+  const allReady = players.every(p=>p.ready);
+  if(allReady && room.host_id === currentUser.id) {
+    const gs = createInitialGameState(players.length, players);
+    await sb.from('game_rooms').update({
+      status:'playing',
+      game_state: gs
+    }).eq('id',currentRoom.id);
+  } else {
+    showScreen('waitingScreen');
+    document.getElementById('waitingInfo').textContent = 'Ожидание остальных игроков...';
+  }
+}
+
+// ===== GAME STATE =====
+function createInitialGameState(playerCount, players=[]) {
+  const ps = players.length > 0 ? players : Array.from({length:playerCount},(_,i)=>({
+    id:`player${i}`,
+    username:`Игрок ${i+1}`,
+    colorIdx:i,
+    deck:['pawn','bigpawn'],
+    ready:true
+  }));
+  
+  return {
+    turn: 0, // index into players array
+    phase: 'spin', // spin → buy → spawn → move → end
+    players: ps.map((p,i)=>({
+      ...p,
+      juice: 0,
+      units: [],
+      alive: true
+    })),
+    board: {}, // cellId → unit data
+    playerBases: {}, // playerId → cellId
+    log: ['Игра началась!'],
+    winner: null,
+    pendingSix: 0,
+    boughtThisTurn: [],
+    spawnQueue: [],
+    lastSpin: null,
+    phaseData: {}
+  };
+}
+
+// ===== GAME UI =====
+async function showGame() {
+  showScreen('gameScreen');
+  initBoard();
+  initCanvas();
+  
+  // Sync board units from gameState
+  syncBoardFromState();
+  
+  renderPlayersPanel();
+  renderShop();
+  updateTurnUI();
+  drawBoard();
+  
+  addLog('🎮 Игра началась!');
+}
+
+function syncBoardFromState() {
+  // Clear all units
+  Object.values(board).forEach(c=>c.unit=null);
+  
+  // Place units from state
+  if(gameState?.board) {
+    Object.entries(gameState.board).forEach(([cellId,unit])=>{
+      if(board[cellId]) board[cellId].unit = unit;
+    });
+  }
+}
+
+function renderPlayersPanel() {
+  if(!gameState) return;
+  const el = document.getElementById('playersList');
+  el.innerHTML = gameState.players.map((p,i)=>`
+    <div class="player-card ${i===gameState.turn?'active':''}">
+      <div class="player-dot" style="background:${PLAYER_COLORS[p.colorIdx]}"></div>
+      <div class="player-name">${p.username}${p.id===myPlayerId?' (Вы)':''}</div>
+      <div class="player-juice">🧃${p.juice||0}</div>
+    </div>
+  `).join('');
+}
+
+function renderShop() {
+  const cards = Object.values(CARDS).filter(c=>c.id!=='elitepawn');
+  document.getElementById('shopGrid').innerHTML = cards.map(card=>`
+    <div class="card-item ${selectedCard===card.id?'selected':''}" 
+         onclick="selectShopCard('${card.id}')" 
+         title="${card.description}">
+      <div class="card-icon">${card.icon}</div>
+      <div class="card-name">${card.name}</div>
+      <div class="card-cost">💧${card.cost}</div>
+      <div class="card-stats">❤️${card.hp} ⚔️${card.damage}</div>
+    </div>
+  `).join('');
+  
+  updateBoughtUnits();
+}
+
+function selectShopCard(cardId) {
+  if(!isMyTurn() || gameState?.phase !== 'buy') return;
+  selectedCard = selectedCard === cardId ? null : cardId;
+  renderShop();
+  updateBuyBtn();
+}
+
+function updateBuyBtn() {
+  const btn = document.getElementById('buyBtn');
+  if(!btn) return;
+  const myPlayer = getMyPlayer();
+  const card = selectedCard ? CARDS[selectedCard] : null;
+  const canBuy = isMyTurn() && 
+                 gameState?.phase==='buy' && 
+                 card && 
+                 myPlayer && 
+                 (myPlayer.juice||0) >= card.cost &&
+                 (gameState?.boughtThisTurn?.length || 0) < 6;
+  btn.disabled = !canBuy;
+}
+
+function updateBoughtUnits() {
+  const el = document.getElementById('boughtUnits');
+  if(!el) return;
+  const bought = gameState?.boughtThisTurn || [];
+  el.innerHTML = bought.map(cardId=>{
+    const card = CARDS[cardId];
+    return `<div class="unit-badge" style="background:rgba(255,107,53,0.2);border:1px solid rgba(255,107,53,0.3)">${card.icon} ${card.name}</div>`;
+  }).join('') || '<span style="color:#666;font-size:12px">Пусто</span>';
+}
+
+function updateTurnUI() {
+  if(!gameState) return;
+  const curPlayer = gameState.players[gameState.turn];
+  const myPlayer = getMyPlayer();
+  const isMe = isMyTurn();
+  
+  const phaseName = {
+    spin:'🎲 Крутите рулетку',
+    buy:'🛒 Покупайте карты',
+    spawn:'📍 Расставьте юнитов',
+    move:'⚔️ Ход юнитов',
+    base_select:'🏠 Выберите базу',
+    end:'✅ Завершите ход'
+  };
+  
+  document.getElementById('currentTurnName').textContent = curPlayer?.username || '-';
+  document.getElementById('currentTurnName').style.color = PLAYER_COLORS[curPlayer?.colorIdx||0];
+  document.getElementById('currentPhase').textContent = phaseName[gameState.phase] || gameState.phase;
+  document.getElementById('myJuice').textContent = myPlayer?.juice || 0;
+  document.getElementById('headerTurnName').textContent = `Ход: ${curPlayer?.username}`;
+  document.getElementById('headerPhase').textContent = phaseName[gameState.phase]||'';
+  
+  // Spin button
+  const spinBtn = document.getElementById('spinBtn');
+  spinBtn.disabled = !isMe || gameState.phase !== 'spin';
+  
+  // End turn button
+  const endBtn = document.getElementById('endTurnBtn');
+  endBtn.disabled = !isMe || !['buy','move','spawn'].includes(gameState.phase);
+  
+  renderPlayersPanel();
+  updateBuyBtn();
+  updateBoughtUnits();
+}
+
+function getMyPlayer() {
+  return gameState?.players?.find(p=>p.id===myPlayerId);
+}
+
+function isMyTurn() {
+  if(!gameState||myPlayerId===null) return false;
+  return gameState.players[gameState.turn]?.id === myPlayerId;
+}
+
+// ===== ROULETTE =====
+async function spinRoulette() {
+  if(!isMyTurn()||gameState.phase!=='spin'||spinning) return;
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  
+  const result = Math.floor(Math.random()*6)+1;
+  
+  // Animate
+  const extraSpins = 3 + Math.random()*3;
+  const deg = 360*extraSpins + (result-1)*60;
+  rotationDeg += deg;
+  
+  const wheel = document.getElementById('rouletteWheel');
+  wheel.style.transform = `rotate(${rotationDeg}deg)`;
+  
+  setTimeout(async()=>{
+    spinning = false;
+    document.getElementById('rouletteNum').textContent = result;
+    document.getElementById('rouletteResult').textContent = `+${result} 🧃`;
+    
+    // Handle double 6
+    if(result===6) {
+      if(gameState.pendingSix===1) {
+        // Double 6! Elite pawn!
+        showToast('🎉 ДВОЙНАЯ ШЕСТЁРКА! Элитная пешка!');
+        addLog('🎉 Двойная шестёрка — Элитная пешка!');
+        
+        const newState = {...gameState};
+        const myIdx = newState.players.findIndex(p=>p.id===myPlayerId);
+        newState.players[myIdx].juice = (newState.players[myIdx].juice||0) + 6;
+        newState.boughtThisTurn = [...(newState.boughtThisTurn||[]), 'elitepawn'];
+        newState.spawnQueue = [...(newState.spawnQueue||[]), 'elitepawn'];
+        newState.pendingSix = 0;
+        newState.phase = 'buy';
+        newState.lastSpin = result;
+        await updateGameState(newState);
+        return;
+      } else {
+        // First 6 — spin again?
+        showToast('🎲 Шестёрка! Крутите ещё раз!');
+        addLog('🎲 Выпала 6! Можно крутить ещё раз!');
+        
+        const newState = {...gameState};
+        const myIdx = newState.players.findIndex(p=>p.id===myPlayerId);
+        newState.players[myIdx].juice = (newState.players[myIdx].juice||0) + 6;
+        newState.pendingSix = 1;
+        newState.lastSpin = 6;
+        // Stay in spin phase
+        await updateGameState(newState);
+        document.getElementById('spinBtn').disabled = false;
+        return;
+      }
+    }
+    
+    // Normal spin
+    const newState = {...gameState};
+    const myIdx = newState.players.findIndex(p=>p.id===myPlayerId);
+    newState.players[myIdx].juice = (newState.players[myIdx].juice||0) + result;
+    newState.phase = 'buy';
+    newState.pendingSix = 0;
+    newState.lastSpin = result;
+    newState.boughtThisTurn = [];
+    
+    addLog(`🎲 ${getMyPlayer()?.username} выбил ${result} 🧃`);
+    await updateGameState(newState);
+  }, 2200);
+}
+
+// ===== BUY =====
+function buyCard() {
+  if(!isMyTurn()||!selectedCard||gameState.phase!=='buy') return;
+  const card = CARDS[selectedCard];
+  const myPlayer = getMyPlayer();
+  if(!myPlayer||(myPlayer.juice||0)<card.cost) { showToast('Недостаточно сока!'); return; }
+  
+  const newState = JSON.parse(JSON.stringify(gameState));
+  const myIdx = newState.players.findIndex(p=>p.id===myPlayerId);
+  newState.players[myIdx].juice -= card.cost;
+  newState.boughtThisTurn = [...(newState.boughtThisTurn||[]), selectedCard];
+  newState.spawnQueue = [...(newState.spawnQueue||[]), selectedCard];
+  
+  addLog(`🛒 ${getMyPlayer()?.username} купил ${card.name}`);
+  selectedCard = null;
+  
+  updateGameState(newState);
+}
+
+// ===== END TURN =====
+async function endTurn() {
+  if(!isMyTurn()) return;
+  const phase = gameState.phase;
+  
+  if(phase === 'buy') {
+    // Move to spawn phase if has units to spawn, else move phase
+    const newState = JSON.parse(JSON.stringify(gameState));
+    if((newState.spawnQueue||[]).length>0) {
+      newState.phase = 'spawn';
+    } else {
+      newState.phase = 'move';
+      // Reset unit actions
+      resetUnitActions(newState);
+    }
+    await updateGameState(newState);
+    return;
+  }
+  
+  if(phase === 'spawn') {
+    const newState = JSON.parse(JSON.stringify(gameState));
+    newState.spawnQueue = [];
+    newState.phase = 'move';
+    resetUnitActions(newState);
+    await updateGameState(newState);
+    return;
+  }
+  
+  if(phase === 'move') {
+    // Next player's turn
+    const newState = JSON.parse(JSON.stringify(gameState));
+    newState.turn = (newState.turn+1) % newState.players.length;
+    newState.phase = 'spin';
+    newState.boughtThisTurn = [];
+    newState.spawnQueue = [];
+    newState.pendingSix = 0;
+    newState.lastSpin = null;
+    
+    // Check win condition
+    checkWin(newState);
+    
+    addLog(`→ Ход переходит к ${newState.players[newState.turn]?.username}`);
+    await updateGameState(newState);
+  }
+}
+
+function resetUnitActions(state) {
+  Object.values(state.board||{}).forEach(unit=>{
+    unit.moved = false;
+    unit.attacked = false;
+  });
+}
+
+// ===== SPAWN =====
+async function trySpawnUnit(cell) {
+  if(!isMyTurn()||gameState.phase!=='spawn') return;
+  if((gameState.spawnQueue||[]).length===0) { showToast('Нечего ставить'); return; }
+  
+  // Check cell is near base
+  const myBase = gameState.playerBases?.[myPlayerId];
+  if(!myBase) { showToast('Сначала выберите базу!'); return; }
+  
+  // Can spawn on any empty cell in own zone
+  const myPlayer = getMyPlayer();
+  const myZone = `p${myPlayer.colorIdx}`;
+  
+  if(cell.zone !== myZone && cell.zone !== 'center') {
+    // Allow spawning adjacent to base
+  }
+  
+  if(cell.unit) { showToast('Клетка занята!'); return; }
+  
+  const cardId = gameState.spawnQueue[0];
+  const card = CARDS[cardId];
+  
+  const newState = JSON.parse(JSON.stringify(gameState));
+  const unitId = `unit_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  const unit = {
+    id: unitId,
+    type: cardId,
+    owner: myPlayerId,
+    hp: card.hp,
+    maxHp: card.hp,
+    damage: card.damage,
+    moved: false,
+    attacked: false
+  };
+  
+  newState.board = newState.board || {};
+  newState.board[cell.id] = unit;
+  newState.spawnQueue.splice(0,1);
+  
+  board[cell.id].unit = unit;
+  
+  addLog(`📍 ${getMyPlayer()?.username} поставил ${card.name}`);
+  drawBoard();
+  
+  await updateGameState(newState);
+  selectedCard = null;
+  updateTurnUI();
+}
+
+// ===== BASE SELECT =====
+async function selectBase(cell) {
+  if(!isMyTurn()) return;
+  
+  const newState = JSON.parse(JSON.stringify(gameState));
+  newState.playerBases = newState.playerBases || {};
+  newState.playerBases[myPlayerId] = cell.id;
+  
+  // Advance to next player's base selection or to spin
+  const allSelected = newState.players.every(p=>newState.playerBases[p.id]);
+  if(allSelected) {
+    newState.phase = 'spin';
+  } else {
+    // Advance turn to next player who hasn't selected
+    let nextTurn = (newState.turn+1) % newState.players.length;
+    while(newState.playerBases[newState.players[nextTurn].id]) {
+      nextTurn = (nextTurn+1) % newState.players.length;
+    }
+    newState.turn = nextTurn;
+  }
+  
+  addLog(`🏠 ${getMyPlayer()?.username} выбрал базу`);
+  await updateGameState(newState);
+}
+
+// ===== UNIT ACTIONS =====
+function showUnitActions(cell) {
+  const unit = cell.unit;
+  const card = CARDS[unit.type];
+  
+  showModal(`
+    <h2>${card.icon} ${card.name}</h2>
+    <p>❤️ ${unit.hp}/${unit.maxHp} | ⚔️ ${unit.damage}</p>
+    <div style="margin-top:16px">
+      ${!unit.moved ? `<button class="action-btn action-move" onclick="startMove('${cell.id}')">🚶 Переместить</button>` : ''}
+      ${!unit.attacked && unit.type!=='rocket' && unit.type!=='helicopter' ? 
+        `<button class="action-btn action-attack" onclick="startAttack('${cell.id}')">⚔️ Атаковать</button>` : ''}
+      ${!unit.attacked && unit.type==='rocket' ? 
+        `<button class="action-btn action-attack" onclick="startRocketTarget('${cell.id}')">🎯 Выстрел ракетой</button>` : ''}
+      ${!unit.attacked && unit.type==='helicopter' ? 
+        `<button class="action-btn action-attack" onclick="startHeliAttack('${cell.id}')">🚁 Удар вертолётом</button>` : ''}
+      <button class="action-btn action-cancel" onclick="closeModal()">Отмена</button>
+    </div>
+  `);
+}
+
+function startMove(cellId) {
+  closeModal();
+  selectedUnit = board[cellId];
+  actionMode = 'move';
+  showToast('Выберите клетку для перемещения');
+  drawBoard();
+}
+
+function startAttack(cellId) {
+  closeModal();
+  selectedUnit = board[cellId];
+  actionMode = 'attack';
+  showToast('Выберите цель для атаки');
+  drawBoard();
+}
+
+function startRocketTarget(cellId) {
+  closeModal();
+  selectedUnit = board[cellId];
+  actionMode = 'rocket_target';
+  showToast('Выберите цель для ракеты (поразит всех в радиусе 1)');
+  drawBoard();
+}
+
+function startHeliAttack(cellId) {
+  closeModal();
+  selectedUnit = board[cellId];
+  actionMode = 'heli_line';
+  showToast('Вертолёт бьёт по всей жёлтой или фиолетовой линии! Выберите любую клетку на линии.');
+  drawBoard();
+}
+
+async function tryMoveUnit(targetCell) {
+  if(!selectedUnit||targetCell.unit) {
+    actionMode=null; selectedUnit=null; drawBoard();
+    return;
+  }
+  
+  const reachable = getReachable(board[selectedUnit.id]);
+  if(!reachable.includes(targetCell.id)) {
+    showToast('Нельзя переместиться туда!'); return;
+  }
+  
+  const newState = JSON.parse(JSON.stringify(gameState));
+  const unit = newState.board[selectedUnit.id];
+  unit.moved = true;
+  
+  delete newState.board[selectedUnit.id];
+  newState.board[targetCell.id] = unit;
+  
+  board[selectedUnit.id].unit = null;
+  board[targetCell.id].unit = unit;
+  
+  // Check if pawn crossed enemy territory
+  const cardDef = CARDS[unit.type];
+  if(cardDef && (unit.type==='pawn'||unit.type==='bigpawn'||unit.type==='elitepawn')) {
+    checkPawnBonus(targetCell, newState);
+  }
+  
+  addLog(`🚶 Юнит перемещён`);
+  
+  actionMode = null;
+  selectedUnit = null;
+  drawBoard();
+  await updateGameState(newState);
+}
+
+function checkPawnBonus(cell, state) {
+  // If pawn enters enemy zone, get extra juice
+  const myPlayer = state.players.find(p=>p.id===myPlayerId);
+  if(!myPlayer) return;
+  const myZone = `p${myPlayer.colorIdx}`;
+  
+  if(cell.zone !== 'center' && cell.zone !== myZone) {
+    myPlayer.juice = (myPlayer.juice||0) + 1;
+    addLog('🎁 Пешка прошла через вражескую территорию! +1 🧃');
+  }
+}
+
+async function tryAttack(targetCell) {
+  if(!selectedUnit||!targetCell.unit||targetCell.unit.owner===myPlayerId) {
+    actionMode=null; selectedUnit=null; drawBoard(); return;
+  }
+  
+  // Must be adjacent
+  const srcCell = board[selectedUnit.id];
+  if(!srcCell.neighbors?.includes(targetCell.id)) {
+    showToast('Цель слишком далеко!'); return;
+  }
+  
+  await resolveAttack(selectedUnit.id, targetCell.id);
+}
+
+async function resolveAttack(srcId, tgtId) {
+  const newState = JSON.parse(JSON.stringify(gameState));
+  const attacker = newState.board[srcId];
+  const defender = newState.board[tgtId];
+  
+  if(!attacker||!defender) return;
+  
+  defender.hp -= attacker.damage;
+  attacker.attacked = true;
+  
+  addLog(`⚔️ ${CARDS[attacker.type]?.name} атакует ${CARDS[defender.type]?.name} (${defender.hp}/${defender.maxHp} HP)`);
+  
+  if(defender.hp <= 0) {
+    delete newState.board[tgtId];
+    board[tgtId].unit = null;
+    addLog(`💀 ${CARDS[defender.type]?.name} уничтожен!`);
+  } else {
+    board[tgtId].unit = defender;
+  }
+  
+  board[srcId].unit = attacker;
+  
+  checkWin(newState);
+  actionMode=null; selectedUnit=null;
+  drawBoard();
+  await updateGameState(newState);
+}
+
+async function tryRocketAttack(targetCell) {
+  const newState = JSON.parse(JSON.stringify(gameState));
+  const attacker = newState.board[selectedUnit.id];
+  if(!attacker) return;
+  
+  attacker.attacked = true;
+  
+  // Hit target and all neighbors
+  const toKill = [targetCell.id, ...(targetCell.neighbors||[])];
+  let killCount = 0;
+  
+  toKill.forEach(cellId=>{
+    if(newState.board[cellId]) {
+      const unit = newState.board[cellId];
+      unit.hp -= attacker.damage;
+      if(unit.hp <= 0) {
+        delete newState.board[cellId];
+        board[cellId].unit = null;
+        killCount++;
+      }
+    }
+  });
+  
+  addLog(`🎯 Ракета! Убито ${killCount} юнитов`);
+  
+  actionMode=null; selectedUnit=null;
+  syncBoardFromState();
+  drawBoard();
+  await updateGameState(newState);
+}
+
+async function tryHeliAttack(targetCell) {
+  // Helicopter attacks all units on the yellow or purple diagonal line through targetCell
+  const newState = JSON.parse(JSON.stringify(gameState));
+  const attacker = newState.board[selectedUnit.id];
+  if(!attacker) return;
+  
+  attacker.attacked = true;
+  
+  // Get all cells on the same "line"
+  // Yellow line connects p0,p2,p4 zones
+  // Purple line connects p1,p3,p5 zones
+  
+  const yellowZones = ['p0','p2','p4','center'];
+  const purpleZones = ['p1','p3','p5','center'];
+  
+  let lineZones;
+  if(yellowZones.includes(targetCell.zone)) {
+    lineZones = yellowZones;
+    addLog('🚁 Вертолёт атакует по ЖЁЛТОЙ линии!');
+  } else {
+    lineZones = purpleZones;
+    addLog('🚁 Вертолёт атакует по ФИОЛЕТОВОЙ линии!');
+  }
+  
+  // Kill ALL units on cells in those zones (including friendly!)
+  let killCount = 0;
+  Object.entries(newState.board).forEach(([cellId, unit])=>{
+    const cell = board[cellId];
+    if(cell && lineZones.includes(cell.zone)) {
+      delete newState.board[cellId];
+      board[cellId].unit = null;
+      killCount++;
+    }
+  });
+  
+  addLog(`🚁 Вертолёт уничтожил ${killCount} юнитов!`);
+  showToast(`Вертолёт уничтожил ${killCount} юнитов!`);
+  
+  actionMode=null; selectedUnit=null;
+  syncBoardFromState();
+  drawBoard();
+  await updateGameState(newState);
+}
+
+function checkWin(state) {
+  // Check if any player has no units and the game has been going
+  const activePlayers = state.players.filter(p=>{
+    const hasUnits = Object.values(state.board||{}).some(u=>u.owner===p.id);
+    return hasUnits;
+  });
+  
+  if(activePlayers.length === 1 && state.players.length > 1) {
+    state.winner = activePlayers[0].id;
+    state.phase = 'ended';
+    showWinModal(activePlayers[0]);
+  }
+}
+
+function showWinModal(player) {
+  showModal(`
+    <div style="font-size:48px;margin-bottom:16px">🏆</div>
+    <h2>Победа!</h2>
+    <p style="font-size:20px;color:${PLAYER_COLORS[player.colorIdx]};font-weight:bold;margin:12px 0">${player.username}</p>
+    <p>выиграл партию!</p>
+    <button class="btn" style="margin-top:20px" onclick="leaveRoom()">Вернуться в лобби</button>
+  `);
+}
+
+// ===== SUPABASE STATE UPDATE =====
+async function updateGameState(newState) {
+  gameState = newState;
+  syncBoardFromState();
+  
+  await sb.from('game_rooms').update({
+    game_state: newState
+  }).eq('id', currentRoom.id);
+  
+  updateTurnUI();
+  drawBoard();
+}
+
+// ===== LOG =====
+function addLog(msg) {
+  const el = document.getElementById('gameLog');
+  if(!el) return;
+  const div = document.createElement('div');
+  div.className = 'log-msg';
+  div.textContent = msg;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+  
+  // Also add to gameState
+  if(gameState) {
+    gameState.log = [...(gameState.log||[]).slice(-50), msg];
+  }
+}
+
+function renderLog() {
+  const el = document.getElementById('gameLog');
+  if(!el||!gameState?.log) return;
+  el.innerHTML = gameState.log.slice(-20).map(m=>`<div class="log-msg">${m}</div>`).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+// ===== MODAL =====
+function showModal(html) {
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').style.display = 'none';
+  actionMode = null;
+  selectedUnit = null;
+  drawBoard();
+}
+
+function closeModalOutside(e) {
+  if(e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+
+// ===== SCREEN MANAGEMENT =====
+function showScreen(id) {
+  ['authScreen','lobbyScreen','waitingScreen','gameScreen','deckScreen'].forEach(s=>{
+    const el = document.getElementById(s);
+    if(el) el.style.display = s===id ? 'flex' : 'none';
+  });
+}
+
+// ===== INIT =====
+async function init() {
+  showScreen('authScreen');
+  
+  const {data:{session}} = await sb.auth.getSession();
+  if(session?.user) {
+    currentUser = session.user;
+    await loadUserProfile();
+    showLobby();
+  }
+  
+  // Ensure DB tables exist (create via RPC if needed)
+  await ensureTables();
+}
+
+async function ensureTables() {
+  // Try to create profiles table if not exists
+  // Note: In production you'd do this via Supabase dashboard
+  // Here we just try to query and ignore errors
+  await sb.from('profiles').select('id').limit(1).catch(()=>{});
+  await sb.from('game_rooms').select('id').limit(1).catch(()=>{});
+}
+
+// Handle real-time during game
+function setupGameRealtime() {
+  if(rouletteChannel) sb.removeChannel(rouletteChannel);
+  
+  rouletteChannel = sb.channel(`game:${currentRoom.id}`)
+    .on('postgres_changes',{
+      event:'UPDATE',
+      schema:'public',
+      table:'game_rooms',
+      filter:`id=eq.${currentRoom.id}`
+    }, (payload) => {
+      if(payload.new.game_state) {
+        gameState = payload.new.game_state;
+        syncBoardFromState();
+        renderPlayersPanel();
+        renderShop();
+        updateTurnUI();
+        renderLog();
+        drawBoard();
+        
+        if(gameState.winner) {
+          const winner = gameState.players.find(p=>p.id===gameState.winner);
+          if(winner) showWinModal(winner);
+        }
+      }
+    })
+    .subscribe();
+}
+
+// Override showGame to setup realtime
+const _origShowGame = showGame;
+async function showGame() {
+  showScreen('gameScreen');
+  initBoard();
+  initCanvas();
+  syncBoardFromState();
+  renderPlayersPanel();
+  renderShop();
+  updateTurnUI();
+  renderLog();
+  drawBoard();
+  
+  // Base selection check
+  if(!gameState.playerBases?.[myPlayerId]) {
+    const newState = JSON.parse(JSON.stringify(gameState));
+    newState.phase = 'base_select';
+    gameState = newState;
+    showToast('Выберите базу — кликните на оранжевый треугольник своего цвета!');
+  }
+  
+  setupGameRealtime();
+}
+
+init();
+</script>
+</body>
+</html>
